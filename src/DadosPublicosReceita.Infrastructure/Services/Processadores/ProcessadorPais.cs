@@ -47,10 +47,12 @@ namespace DadosPublicosReceita.Infrastructure.Services.Processadores
 
         private async Task SalvarPaisesAsync(List<Pais> paises, CancellationToken cancellationToken)
         {
-            Contexto.BulkInsert(paises, options => {
-                options.InsertIfNotExists = true;
-                options.ColumnPrimaryKeyExpression = c => c.Codigo;
-            });
+            await Task.Run(() => {
+                Contexto.BulkInsert(paises, options => {
+                    options.InsertIfNotExists = true;
+                    options.ColumnPrimaryKeyExpression = c => c.Codigo;
+                });
+            }, cancellationToken);
         }
     }
 }

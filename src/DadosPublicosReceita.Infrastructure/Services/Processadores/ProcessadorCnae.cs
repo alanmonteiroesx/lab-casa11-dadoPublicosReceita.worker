@@ -48,10 +48,12 @@ namespace DadosPublicosReceita.Infrastructure.Services.Processadores
 
         private async Task SalvarCnaesAsync(List<Cnae> cnaes, CancellationToken cancellationToken)
         {
-            Contexto.BulkInsert(cnaes, options => {
-                options.InsertIfNotExists = true;
-                options.ColumnPrimaryKeyExpression = c => c.Codigo;
-            });
+            await Task.Run(() => {
+                Contexto.BulkInsert(cnaes, options => {
+                    options.InsertIfNotExists = true;
+                    options.ColumnPrimaryKeyExpression = c => c.Codigo;
+                });
+            }, cancellationToken);
         }
     }
 }

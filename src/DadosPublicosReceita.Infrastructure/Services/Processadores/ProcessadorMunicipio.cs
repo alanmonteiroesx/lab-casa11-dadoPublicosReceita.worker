@@ -48,10 +48,12 @@ namespace DadosPublicosReceita.Infrastructure.Services.Processadores
 
         private async Task SalvarMunicipiosAsync(List<Municipio> municipios, CancellationToken cancellationToken)
         {
-            Contexto.BulkInsert(municipios, options => {
-                options.InsertIfNotExists = true;
-                options.ColumnPrimaryKeyExpression = m => m.Codigo;
-            });
+            await Task.Run(() => {
+                Contexto.BulkInsert(municipios, options => {
+                    options.InsertIfNotExists = true;
+                    options.ColumnPrimaryKeyExpression = c => c.Codigo;
+                });
+            }, cancellationToken);
         }
     }
 

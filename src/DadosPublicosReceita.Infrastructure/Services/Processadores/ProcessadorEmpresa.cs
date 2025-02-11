@@ -72,10 +72,14 @@ namespace DadosPublicosReceita.Infrastructure.Services.Processadores
 
         private async Task SalvarEmpresasAsync(List<Empresa> empresas, CancellationToken cancellationToken)
         {
-            Contexto.BulkInsert(empresas, options => {
-                options.InsertIfNotExists = true;
-                options.ColumnPrimaryKeyExpression = e => e.CnpjBasico;
-            });
+            await Task.Run(() =>
+            {
+                Contexto.BulkInsert(empresas, options =>
+                {
+                    options.InsertIfNotExists = true;
+                    options.ColumnPrimaryKeyExpression = e => e.CnpjBasico;
+                });
+            }, cancellationToken);
         }
     }
 }

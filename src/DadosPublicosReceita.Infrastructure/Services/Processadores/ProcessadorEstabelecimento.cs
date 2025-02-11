@@ -192,7 +192,6 @@ namespace DadosPublicosReceita.Infrastructure.Services.Processadores
                 await Contexto.BulkInsertAsync(estabelecimentos, options => {
                     options.InsertIfNotExists = true;
                     options.ColumnPrimaryKeyExpression = e => new { e.CnpjBasico, e.CnpjOrdem, e.CnpjDv };
-                    options.BatchSize = 5000;
                 }, cancellationToken);
 
                 await Contexto.BulkInsertAsync(enderecos, options => {
@@ -202,7 +201,6 @@ namespace DadosPublicosReceita.Infrastructure.Services.Processadores
                         e.EstabelecimentoCnpjOrdem,
                         e.EstabelecimentoCnpjDv
                     };
-                    options.BatchSize = 5000;
                 }, cancellationToken);
 
                 await Contexto.BulkInsertAsync(telefones, options => {
@@ -214,7 +212,6 @@ namespace DadosPublicosReceita.Infrastructure.Services.Processadores
                         t.Codigo,
                         t.Numero
                     };
-                    options.BatchSize = 5000;
                 }, cancellationToken);
             }
             catch (SqlException sqlEx)
