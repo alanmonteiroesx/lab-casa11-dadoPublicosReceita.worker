@@ -15,12 +15,6 @@ namespace DadosPublicosReceita.Infrastructure.Services
         protected readonly ImportacaoControle Controle;
         protected const int TamanhoDoLote = 30000;
 
-        protected ProcessadorCsvBase(AppDbContext contexto, ILogger logger)
-        {
-            Contexto = contexto;
-            Logger = logger;
-        }
-
         protected ProcessadorCsvBase(AppDbContext contexto, ILogger logger, ImportacaoControle controle)
         {
             Contexto = contexto;
