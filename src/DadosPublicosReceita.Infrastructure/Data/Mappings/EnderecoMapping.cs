@@ -62,7 +62,6 @@ namespace DadosPublicosReceita.Infrastructure.Data.Mappings
                 .OnDelete(DeleteBehavior.Restrict);
 
             builder.Property(x => x.EstabelecimentoCnpjBasico)
-                .HasColumnName("EstabelecimentoId")
                 .HasColumnType("CHAR")
                 .HasMaxLength(8);
 
@@ -82,6 +81,11 @@ namespace DadosPublicosReceita.Infrastructure.Data.Mappings
                     x.EstabelecimentoCnpjDv
                 })
                 .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasOne(x => x.Pais)
+                .WithMany()
+                .HasForeignKey(x => x.PaisId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

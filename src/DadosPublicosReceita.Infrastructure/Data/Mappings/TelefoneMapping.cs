@@ -21,7 +21,6 @@ namespace DadosPublicosReceita.Infrastructure.Data.Mappings
                 .HasMaxLength(9);
 
             builder.Property(x => x.EstabelecimentoCnpjBasico)
-                .HasColumnName("EstabelecimentoId")
                 .HasColumnType("CHAR")
                 .HasMaxLength(8);
 

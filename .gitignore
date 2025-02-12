@@ -60,6 +60,7 @@ appsettings.Development.json
 .env.development.local
 .env.test.local
 .env.production.local
+!.env.example
 
 # Arquivos do sistema operacional
 .DS_Store

@@ -138,14 +138,10 @@ namespace DadosPublicosReceita.Infrastructure.Services
                 "Paises.zip"
             };
 
-            for (int i = 0; i < 10; i++)
-            {
-                arquivosBase.Add($"Empresas{i}.zip");
-            }
-
-            for (int i = 0; i < 10; i++)
+            for (int i = 1; i < 10; i++)
             {
                 arquivosBase.Add($"Estabelecimentos{i}.zip");
+                arquivosBase.Add($"Empresas{i}.zip");
             }
 
             if (string.IsNullOrEmpty(_pastaAtual))

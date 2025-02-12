@@ -132,6 +132,13 @@ namespace DadosPublicosReceita.Infrastructure.Services.Processadores
 
         private Endereco CriarEndereco(CsvReader csv, Estabelecimento estabelecimento)
         {
+            var paisId = ObterValorCampo(csv, 9);
+
+            if (string.IsNullOrWhiteSpace(paisId) || !Contexto.Paizes.Any(p => p.Codigo == paisId))
+            {
+                paisId = "999";
+            }
+
             return new Endereco(
                 tipoLogradouro: ObterValorCampo(csv, 13),
                 logradouro: ObterValorCampo(csv, 14),
@@ -141,7 +148,7 @@ namespace DadosPublicosReceita.Infrastructure.Services.Processadores
                 cep: ObterValorCampo(csv, 18),
                 uf: ObterValorCampo(csv, 19),
                 municipioId: ObterValorCampo(csv, 20),
-                paisId: ObterValorCampo(csv, 9),
+                paisId: paisId,
                 estabelecimentoCnpjBasico: estabelecimento.CnpjBasico,
                 estabelecimentoCnpjOrdem: estabelecimento.CnpjOrdem,
                 estabelecimentoCnpjDv: estabelecimento.CnpjDv
@@ -196,22 +203,12 @@ namespace DadosPublicosReceita.Infrastructure.Services.Processadores
 
                 await Contexto.BulkInsertAsync(enderecos, options => {
                     options.InsertIfNotExists = true;
-                    options.ColumnPrimaryKeyExpression = e => new {
-                        e.EstabelecimentoCnpjBasico,
-                        e.EstabelecimentoCnpjOrdem,
-                        e.EstabelecimentoCnpjDv
-                    };
+                    options.ColumnPrimaryKeyExpression = e => e.Id;
                 }, cancellationToken);
 
                 await Contexto.BulkInsertAsync(telefones, options => {
                     options.InsertIfNotExists = true;
-                    options.ColumnPrimaryKeyExpression = t => new {
-                        t.EstabelecimentoCnpjBasico,
-                        t.EstabelecimentoCnpjOrdem,
-                        t.EstabelecimentoCnpjDv,
-                        t.Codigo,
-                        t.Numero
-                    };
+                    options.ColumnPrimaryKeyExpression = t => t.Id;
                 }, cancellationToken);
             }
             catch (SqlException sqlEx)
