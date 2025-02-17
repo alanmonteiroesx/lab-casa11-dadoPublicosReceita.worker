@@ -80,6 +80,9 @@ namespace DadosPublicosReceita.Infrastructure.Data.Mappings
                 .OnDelete(DeleteBehavior.Restrict)
                 .IsRequired(true);
 
+            builder.HasIndex(x => x.CnaePrincipalId)
+                .HasDatabaseName("IX_Estabelecimento_Cnae");
+
             builder.HasOne(e => e.Empresa)
                 .WithMany(e => e.Estabelecimentos)
                 .HasForeignKey(e => e.CnpjBasico)

@@ -41,6 +41,12 @@ namespace DadosPublicosReceita.Infrastructure.Data.Mappings
                 })
                 .HasConstraintName("FK_Telefone_Estabelecimento")
                 .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasIndex(x => new {
+                x.EstabelecimentoCnpjBasico,
+                x.EstabelecimentoCnpjOrdem,
+                x.EstabelecimentoCnpjDv
+            }).HasDatabaseName("IX_Telefone_Estabelecimento");
         }
     }
 }
