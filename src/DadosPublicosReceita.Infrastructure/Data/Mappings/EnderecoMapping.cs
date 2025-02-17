@@ -62,6 +62,9 @@ namespace DadosPublicosReceita.Infrastructure.Data.Mappings
                 .HasConstraintName("FK_Endereco_Municipio")
                 .OnDelete(DeleteBehavior.Restrict);
 
+            builder.HasIndex(x => x.MunicipioId)
+                .HasDatabaseName("IX_Endereco_Municipio");
+
             builder.Property(x => x.EstabelecimentoCnpjBasico)
                 .HasColumnType("CHAR")
                 .HasMaxLength(8);
@@ -84,11 +87,20 @@ namespace DadosPublicosReceita.Infrastructure.Data.Mappings
                 .HasConstraintName("FK_Endereco_Estabelecimento")
                 .OnDelete(DeleteBehavior.Cascade);
 
+            builder.HasIndex(x => new {
+                x.EstabelecimentoCnpjBasico,
+                x.EstabelecimentoCnpjOrdem,
+                x.EstabelecimentoCnpjDv
+            }).HasDatabaseName("IX_Endereco_Estabelecimento");
+
             builder.HasOne(x => x.Pais)
                 .WithMany()
                 .HasForeignKey(x => x.PaisId)
                 .HasConstraintName("FK_Endereco_Pais")
                 .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasIndex(x => x.PaisId)
+                .HasDatabaseName("IX_Endereco_Pais");
         }
     }
 }
