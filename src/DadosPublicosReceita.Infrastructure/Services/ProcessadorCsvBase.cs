@@ -15,6 +15,11 @@ namespace DadosPublicosReceita.Infrastructure.Services
         protected readonly ImportacaoControle Controle;
         protected const int TamanhoDoLote = 30000;
 
+        protected const string FORMATO_DATA = "yyyyMMdd";
+        protected const string MENSAGEM_TEMPO_LOTE = "Tempo para processamento de lote ";
+        protected const string MENSAGEM_ERRO_LOTE = "Erro ao salvar lote de {0}";
+        protected const string MENSAGEM_ERRO_DATA = "Erro ao converter data: {Data}";
+
         protected ProcessadorCsvBase(AppDbContext contexto, ILogger logger, ImportacaoControle controle)
         {
             Contexto = contexto;
@@ -57,7 +62,7 @@ namespace DadosPublicosReceita.Infrastructure.Services
 
                 itens.Clear();
                 sw.Stop();
-                Logger.LogInformation("Tempo para processamento de lote " + sw.Elapsed.TotalSeconds.ToString());
+                Logger.LogInformation(MENSAGEM_TEMPO_LOTE + sw.Elapsed.TotalSeconds.ToString());
             }
             catch (Exception ex)
             {
@@ -68,7 +73,7 @@ namespace DadosPublicosReceita.Infrastructure.Services
                         options.ColumnPrimaryKeyExpression = x => x.Id;
                     });
                 }
-                Logger.LogError(ex, $"Erro ao salvar lote de {typeof(T).Name}");
+                Logger.LogError(ex, string.Format(MENSAGEM_ERRO_LOTE, typeof(T).Name));
                 throw;
             }
         }
@@ -112,11 +117,11 @@ namespace DadosPublicosReceita.Infrastructure.Services
                     return null;
                 }
 
-                return DateOnly.ParseExact(valor, "yyyyMMdd", CultureInfo.InvariantCulture);
+                return DateOnly.ParseExact(valor, FORMATO_DATA, CultureInfo.InvariantCulture);
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "Erro ao converter data: {Data}", valor);
+                Logger.LogError(ex, MENSAGEM_ERRO_DATA, valor);
                 return null;
             }
         }

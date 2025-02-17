@@ -5,6 +5,7 @@ using DadosPublicosReceita.Domain.Interfaces.Services;
 using DadosPublicosReceita.Infrastructure.Data;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Logging;
+using Microsoft.EntityFrameworkCore;
 
 namespace DadosPublicosReceita.Infrastructure.Services.Processadores
 {
@@ -54,26 +55,8 @@ namespace DadosPublicosReceita.Infrastructure.Services.Processadores
                         await ProcessarLote(estabelecimentos, SalvarEstabelecimentosAsync, cancellationToken);
                 }
                 catch (Exception ex)
-                {
-                    var detalhesErro = new
-                    {
-                        CnpjBasico = ObterValorCampo(csv, 0),
-                        CnpjOrdem = ObterValorCampo(csv, 1),
-                        CnpjDv = ObterValorCampo(csv, 2),
-                        NomeFantasia = ObterValorCampo(csv, 4),
-                        DataSituacaoCadastral = ObterValorCampo(csv, 6),
-                        Email = ObterValorCampo(csv, 27),
-                        Endereco = new
-                        {
-                            Logradouro = ObterValorCampo(csv, 14),
-                            Numero = ObterValorCampo(csv, 15),
-                            Bairro = ObterValorCampo(csv, 17),
-                            Cep = ObterValorCampo(csv, 18),
-                            Municipio = ObterValorCampo(csv, 20)
-                        }
-                    };
-
-                    Logger.LogError(ex, "Erro ao processar estabelecimento: {@Estabelecimento}", detalhesErro);
+                {                   
+                    Logger.LogError(ex, "Erro ao processar estabelecimento");
                 }
             }
 
@@ -181,21 +164,59 @@ namespace DadosPublicosReceita.Infrastructure.Services.Processadores
 
         private async Task SalvarEstabelecimentosAsync(List<DadosEstabelecimento> items, CancellationToken cancellationToken)
         {
-            var estabelecimentos = items.Select(item =>
-            {
-                item.Estabelecimento.SetEndereco(item.Endereco);
-                foreach (var telefone in item.Telefones)
-                {
-                    item.Estabelecimento.AdicionarTelefone(telefone);
-                }
-                return item.Estabelecimento;
-            }).ToList();
+            var registrosValidos = new List<DadosEstabelecimento>();
+            var registrosInvalidos = new List<(DadosEstabelecimento Dados, string Erro)>();
 
-            var enderecos = items.Select(x => x.Endereco).ToList();
-            var telefones = items.SelectMany(x => x.Telefones).ToList();
+            var cnpjsBasicos = items.Select(x => x.Estabelecimento.CnpjBasico).Distinct().ToList();
+            var empresasExistentes = await Contexto.Empresas
+                .Where(e => cnpjsBasicos.Contains(e.CnpjBasico))
+                .Select(e => e.CnpjBasico)
+                .ToListAsync(cancellationToken);
+
+            foreach (var item in items)
+            {
+                if (!empresasExistentes.Contains(item.Estabelecimento.CnpjBasico))
+                {
+                    registrosInvalidos.Add((item, $"Empresa não encontrada para o CNPJ Básico {item.Estabelecimento.CnpjBasico}"));
+                    continue;
+                }
+
+                try
+                {
+                    registrosValidos.Add(item);
+                }
+                catch (Exception ex)
+                {
+                    registrosInvalidos.Add((item, ex.Message));
+                }
+            }
+
+            foreach (var (dados, erro) in registrosInvalidos)
+            {
+                Logger.LogWarning(
+                    "Registro ignorado durante importação: Estabelecimento {CNPJ} - Erro: {Erro}",
+                    $"{dados.Estabelecimento.CnpjBasico}/{dados.Estabelecimento.CnpjOrdem}-{dados.Estabelecimento.CnpjDv}",
+                    erro);
+            }
+
+            if (!registrosValidos.Any())
+                return;
 
             try
             {
+                var estabelecimentos = registrosValidos.Select(item =>
+                {
+                    item.Estabelecimento.SetEndereco(item.Endereco);
+                    foreach (var telefone in item.Telefones)
+                    {
+                        item.Estabelecimento.AdicionarTelefone(telefone);
+                    }
+                    return item.Estabelecimento;
+                }).ToList();
+
+                var enderecos = registrosValidos.Select(x => x.Endereco).ToList();
+                var telefones = registrosValidos.SelectMany(x => x.Telefones).ToList();
+
                 await Contexto.BulkInsertAsync(estabelecimentos, options => {
                     options.InsertIfNotExists = true;
                     options.ColumnPrimaryKeyExpression = e => new { e.CnpjBasico, e.CnpjOrdem, e.CnpjDv };
@@ -213,10 +234,13 @@ namespace DadosPublicosReceita.Infrastructure.Services.Processadores
             }
             catch (SqlException sqlEx)
             {
-                foreach (SqlError ex in sqlEx.Errors)
+                foreach (SqlError error in sqlEx.Errors)
                 {
-                    Logger.LogError(ex.Message + ex.Source);
-                };
+                    Logger.LogError("Erro SQL durante bulk insert: {Mensagem} - Linha: {Linha}",
+                        error.Message,
+                        error.LineNumber);
+                }
+                throw;
             }
         }
     }

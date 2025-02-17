@@ -1,4 +1,5 @@
 ﻿using DadosPublicosReceita.Domain.Entities;
+using DadosPublicosReceita.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -14,17 +15,24 @@ namespace DadosPublicosReceita.Infrastructure.Data.Mappings
 
             builder.Property(x => x.AnoMes)
                 .HasColumnName("AnoMes")
-                .HasColumnType("varchar(7)")
+                .HasColumnType("varchar")
+                .HasMaxLength(7)
                 .IsRequired();
 
             builder.Property(x => x.NomeArquivo)
                 .HasColumnName("NomeArquivo")
                 .HasColumnType("varchar(100)")
+                .HasMaxLength(30)
                 .IsRequired();
 
             builder.Property(x => x.Status)
                 .HasColumnName("Status")
-                .HasColumnType("int")
+                .HasColumnType("varchar")
+                .HasMaxLength(20)
+                .HasConversion(
+                    v => v.ToString(),
+                    v => Enum.Parse<EStatusImportacaoType>(v)
+                )
                 .IsRequired();
 
             builder.Property(x => x.DataInicio)
@@ -54,13 +62,9 @@ namespace DadosPublicosReceita.Infrastructure.Data.Mappings
 
             builder.Property(x => x.VersaoArquivo)
                 .HasColumnName("VersaoArquivo")
-                .HasColumnType("varchar(50)")
+                .HasColumnType("varchar")
+                .HasMaxLength(50)
                 .IsRequired();
-
-            builder.HasIndex(x => new { x.AnoMes, x.NomeArquivo }, "IX_ImportacaoControle_AnoMes_NomeArquivo")
-                .IsUnique();
-
-            builder.HasIndex(x => x.Status, "IX_ImportacaoControle_Status");
         }
     }
 }

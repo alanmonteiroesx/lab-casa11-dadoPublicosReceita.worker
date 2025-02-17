@@ -15,6 +15,11 @@ namespace DadosPublicosReceita.Infrastructure.Services
         private readonly AppDbContext _contexto;
         private readonly ILogger<ReceitaFederalProcessamentoService> _logger;
 
+        private const string ENCODING_PADRAO = "ISO-8859-1";
+        private const string ERRO_ZIP_VAZIO = "Arquivo ZIP vazio";
+        private const string ERRO_PROCESSADOR_NAO_IMPLEMENTADO = "Processador não implementado para o tipo {0}";
+        private const string MENSAGEM_ERRO_PROCESSAMENTO = "Erro ao processar arquivo {Arquivo} do tipo {Tipo}";
+
         public ReceitaFederalProcessamentoService(
             AppDbContext contexto,
             ILogger<ReceitaFederalProcessamentoService> logger)
@@ -57,10 +62,10 @@ namespace DadosPublicosReceita.Infrastructure.Services
 
                 using var archive = new ZipArchive(streamArquivo);
                 var entry = archive.Entries.FirstOrDefault()
-                    ?? throw new InvalidOperationException("Arquivo ZIP vazio");
+                    ?? throw new InvalidOperationException(ERRO_ZIP_VAZIO);
 
                 using var streamConteudo = entry.Open();
-                using var reader = new StreamReader(streamConteudo, Encoding.GetEncoding("ISO-8859-1"));
+                using var reader = new StreamReader(streamConteudo, Encoding.GetEncoding(ENCODING_PADRAO));
 
                 return tipo switch
                 {
@@ -69,12 +74,12 @@ namespace DadosPublicosReceita.Infrastructure.Services
                     EReceitaFederalArquivoType.Estabelecimento => await new ProcessadorEstabelecimento(_contexto, _logger, controle).ProcessarAsync(reader, cancellationToken),
                     EReceitaFederalArquivoType.Municipio => await new ProcessadorMunicipio(_contexto, _logger, controle).ProcessarAsync(reader, cancellationToken),
                     EReceitaFederalArquivoType.Pais => await new ProcessadorPais(_contexto, _logger, controle).ProcessarAsync(reader, cancellationToken),
-                    _ => throw new NotImplementedException($"Processador não implementado para o tipo {tipo}")
+                    _ => throw new NotImplementedException(string.Format(ERRO_PROCESSADOR_NAO_IMPLEMENTADO, tipo))
                 };
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Erro ao processar arquivo {Arquivo} do tipo {Tipo}", nomeArquivo, tipo);
+                _logger.LogError(ex, MENSAGEM_ERRO_PROCESSAMENTO, nomeArquivo, tipo);
                 throw;
             }
         }

@@ -12,8 +12,18 @@ namespace DadosPublicosReceita.Infrastructure.Services
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly ILogger<ReceitaFederalDownloadService> _logger;
         private readonly AppDbContext _contexto;
+
         private const string BASE_URL = "https://arquivos.receitafederal.gov.br/dados/cnpj/dados_abertos_cnpj/";
+        private const string PADRAO_PASTA = @"\d{4}-\d{2}/";
+        private const string FORMATO_VERSAO = "yyyyMMddHHmmss";
+        private const string NOME_CLIENTE_HTTP = "ReceitaFederal";
+        private const string MENSAGEM_ERRO_VERIFICACAO = "Erro ao verificar novos dados";
+        private const string MENSAGEM_ERRO_DOWNLOAD = "Erro ao baixar arquivo {0}";
+        private const string MENSAGEM_PROGRESSO_DOWNLOAD = "Download {Arquivo}: {Progresso}% - Baixado: {Baixado:N2}MB de {Total:N2}MB - Velocidade: {Velocidade:N2}MB/s";
+        private const string MENSAGEM_ARQUIVOS_PENDENTES = "Arquivos pendentes para a pasta {Pasta}: {Arquivos}";
+        private const string MENSAGEM_ARQUIVOS_INTERROMPIDOS = "Arquivos interrompidos que serão reprocessados: {Arquivos}";
         private const int BUFFER_SIZE = 32768;
+
         private string _pastaAtual = string.Empty;
 
         public ReceitaFederalDownloadService(
@@ -30,13 +40,12 @@ namespace DadosPublicosReceita.Infrastructure.Services
         {
             try
             {
-                var client = _httpClientFactory.CreateClient("ReceitaFederal");
+                var client = _httpClientFactory.CreateClient(NOME_CLIENTE_HTTP);
                 var response = await client.GetAsync(BASE_URL, cancellationToken);
                 response.EnsureSuccessStatusCode();
 
                 var content = await response.Content.ReadAsStringAsync(cancellationToken);
-                var pattern = @"\d{4}-\d{2}/";
-                var matches = Regex.Matches(content, pattern);
+                var matches = Regex.Matches(content, PADRAO_PASTA);
 
                 if (!matches.Any())
                     return false;
@@ -66,7 +75,7 @@ namespace DadosPublicosReceita.Infrastructure.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Erro ao verificar novos dados");
+                _logger.LogError(ex, MENSAGEM_ERRO_VERIFICACAO);
                 throw;
             }
         }
@@ -77,14 +86,14 @@ namespace DadosPublicosReceita.Infrastructure.Services
         {
             try
             {
-                var client = _httpClientFactory.CreateClient("ReceitaFederal");
+                var client = _httpClientFactory.CreateClient(NOME_CLIENTE_HTTP);
                 var url = $"{BASE_URL}/{_pastaAtual}/{nomeArquivo}";
                 var memoryStream = new MemoryStream();
 
                 using var response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
                 response.EnsureSuccessStatusCode();
 
-                var version = response.Headers.ETag?.Tag ?? DateTime.Now.ToString("yyyyMMddHHmmss");
+                var version = response.Headers.ETag?.Tag ?? DateTime.Now.ToString(FORMATO_VERSAO);
                 using var contentStream = await response.Content.ReadAsStreamAsync(cancellationToken);
 
                 var buffer = new byte[BUFFER_SIZE];
@@ -110,7 +119,7 @@ namespace DadosPublicosReceita.Infrastructure.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Erro ao baixar arquivo {nomeArquivo}");
+                _logger.LogError(ex, string.Format(MENSAGEM_ERRO_DOWNLOAD, nomeArquivo));
                 throw;
             }
         }
@@ -121,7 +130,7 @@ namespace DadosPublicosReceita.Infrastructure.Services
             var velocidade = bytesLidos / (1024 * 1024 * DateTime.Now.Subtract(ultimoLog).TotalSeconds);
 
             _logger.LogInformation(
-                "Download {Arquivo}: {Progresso}% - Baixado: {Baixado:N2}MB de {Total:N2}MB - Velocidade: {Velocidade:N2}MB/s",
+                MENSAGEM_PROGRESSO_DOWNLOAD,
                 arquivo,
                 progresso,
                 bytesLidos / (1024 * 1024),
@@ -138,10 +147,14 @@ namespace DadosPublicosReceita.Infrastructure.Services
                 "Paises.zip"
             };
 
-            for (int i = 1; i < 10; i++)
+            for (int i = 0; i < 10; i++)
+            {
+                arquivosBase.Add($"Empresas{i}.zip");
+            }
+
+            for (int i = 0; i < 10; i++)
             {
                 arquivosBase.Add($"Estabelecimentos{i}.zip");
-                arquivosBase.Add($"Empresas{i}.zip");
             }
 
             if (string.IsNullOrEmpty(_pastaAtual))
@@ -161,19 +174,18 @@ namespace DadosPublicosReceita.Infrastructure.Services
             var arquivosDisponiveis = arquivosBase.Except(arquivosProcessados).ToList();
 
             _logger.LogInformation(
-                "Arquivos pendentes para a pasta {Pasta}: {Arquivos}",
+                MENSAGEM_ARQUIVOS_PENDENTES,
                 _pastaAtual,
                 string.Join(", ", arquivosDisponiveis));
 
             if (arquivosInterrompidos.Any())
             {
                 _logger.LogInformation(
-                    "Arquivos interrompidos que serão reprocessados: {Arquivos}",
+                    MENSAGEM_ARQUIVOS_INTERROMPIDOS,
                     string.Join(", ", arquivosInterrompidos));
             }
 
             return arquivosDisponiveis;
         }
     }
-    public record ArquivosDisponiveis(string Pasta, IEnumerable<string> Arquivos);
 }
