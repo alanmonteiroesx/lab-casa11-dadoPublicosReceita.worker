@@ -76,8 +76,15 @@ namespace DadosPublicosReceita.Infrastructure.Data.Mappings
             builder.HasOne(e => e.CnaePrincipal)
                 .WithMany()
                 .HasForeignKey(e => e.CnaePrincipalId)
+                .HasConstraintName("FK_Estabelecimento_Cnae")
                 .OnDelete(DeleteBehavior.Restrict)
                 .IsRequired(true);
+
+            builder.HasOne(e => e.Empresa)
+                .WithMany(e => e.Estabelecimentos)
+                .HasForeignKey(e => e.CnpjBasico)
+                .HasConstraintName("FK_Estabelecimento_Empresa")
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

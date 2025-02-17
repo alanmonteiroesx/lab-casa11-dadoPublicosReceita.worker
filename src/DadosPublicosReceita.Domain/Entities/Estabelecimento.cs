@@ -53,15 +53,8 @@ namespace DadosPublicosReceita.Domain.Entities
         public Cnae CnaePrincipal { get; private set; }
         public Guid EnderecoId { get; private set; }
         public Endereco Endereco { get; private set; }
-        public string? EmpresaId { get; private set; }
         public Empresa Empresa { get; private set; }
         public IReadOnlyCollection<Telefone> Telefones => _telefones.AsReadOnly();
-
-        public void VincularEmpresa(Empresa empresa)
-        {
-            Empresa = empresa;
-            EmpresaId = empresa.CnpjBasico;
-        }
 
         public void AdicionarTelefone(Telefone telefone)
         {

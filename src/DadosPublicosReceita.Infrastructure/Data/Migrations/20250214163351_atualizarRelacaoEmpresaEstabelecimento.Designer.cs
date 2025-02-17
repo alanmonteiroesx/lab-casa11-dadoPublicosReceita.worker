@@ -4,6 +4,7 @@ using DadosPublicosReceita.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DadosPublicosReceita.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250214163351_atualizarRelacaoEmpresaEstabelecimento")]
+    partial class atualizarRelacaoEmpresaEstabelecimento
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -226,8 +229,7 @@ namespace DadosPublicosReceita.Infrastructure.Migrations
 
                     b.Property<string>("AnoMes")
                         .IsRequired()
-                        .HasMaxLength(7)
-                        .HasColumnType("varchar")
+                        .HasColumnType("varchar(7)")
                         .HasColumnName("AnoMes");
 
                     b.Property<DateTime?>("DataConclusao")
@@ -244,7 +246,6 @@ namespace DadosPublicosReceita.Infrastructure.Migrations
 
                     b.Property<string>("NomeArquivo")
                         .IsRequired()
-                        .HasMaxLength(30)
                         .HasColumnType("varchar(100)")
                         .HasColumnName("NomeArquivo");
 
@@ -252,10 +253,8 @@ namespace DadosPublicosReceita.Infrastructure.Migrations
                         .HasColumnType("int")
                         .HasColumnName("QuantidadeRegistros");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("varchar")
+                    b.Property<int>("Status")
+                        .HasColumnType("int")
                         .HasColumnName("Status");
 
                     b.Property<int>("UltimoRegistroProcessado")
@@ -264,11 +263,15 @@ namespace DadosPublicosReceita.Infrastructure.Migrations
 
                     b.Property<string>("VersaoArquivo")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar")
+                        .HasColumnType("varchar(50)")
                         .HasColumnName("VersaoArquivo");
 
                     b.HasKey("Id");
+
+                    b.HasIndex(new[] { "AnoMes", "NomeArquivo" }, "IX_ImportacaoControle_AnoMes_NomeArquivo")
+                        .IsUnique();
+
+                    b.HasIndex(new[] { "Status" }, "IX_ImportacaoControle_Status");
 
                     b.ToTable("ImportacaoControle", (string)null);
                 });
@@ -349,22 +352,19 @@ namespace DadosPublicosReceita.Infrastructure.Migrations
                         .WithMany()
                         .HasForeignKey("MunicipioId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("FK_Endereco_Municipio");
+                        .IsRequired();
 
                     b.HasOne("DadosPublicosReceita.Domain.Entities.Pais", "Pais")
                         .WithMany()
                         .HasForeignKey("PaisId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("FK_Endereco_Pais");
+                        .IsRequired();
 
                     b.HasOne("DadosPublicosReceita.Domain.Entities.Estabelecimento", "Estabelecimento")
                         .WithOne("Endereco")
                         .HasForeignKey("DadosPublicosReceita.Domain.Entities.Endereco", "EstabelecimentoCnpjBasico", "EstabelecimentoCnpjOrdem", "EstabelecimentoCnpjDv")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("FK_Endereco_Estabelecimento");
+                        .IsRequired();
 
                     b.Navigation("Estabelecimento");
 
@@ -379,15 +379,13 @@ namespace DadosPublicosReceita.Infrastructure.Migrations
                         .WithMany()
                         .HasForeignKey("CnaePrincipalId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("FK_Estabelecimento_Cnae");
+                        .IsRequired();
 
                     b.HasOne("DadosPublicosReceita.Domain.Entities.Empresa", "Empresa")
                         .WithMany("Estabelecimentos")
                         .HasForeignKey("CnpjBasico")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("FK_Estabelecimento_Empresa");
+                        .IsRequired();
 
                     b.Navigation("CnaePrincipal");
 
@@ -400,8 +398,7 @@ namespace DadosPublicosReceita.Infrastructure.Migrations
                         .WithMany("Telefones")
                         .HasForeignKey("EstabelecimentoCnpjBasico", "EstabelecimentoCnpjOrdem", "EstabelecimentoCnpjDv")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("FK_Telefone_Estabelecimento");
+                        .IsRequired();
 
                     b.Navigation("Estabelecimento");
                 });
