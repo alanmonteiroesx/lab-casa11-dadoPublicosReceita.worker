@@ -59,6 +59,7 @@ namespace DadosPublicosReceita.Infrastructure.Data.Mappings
             builder.HasOne(x => x.Municipio)
                 .WithMany()
                 .HasForeignKey(x => x.MunicipioId)
+                .HasConstraintName("FK_Endereco_Municipio")
                 .OnDelete(DeleteBehavior.Restrict);
 
             builder.Property(x => x.EstabelecimentoCnpjBasico)
@@ -80,11 +81,13 @@ namespace DadosPublicosReceita.Infrastructure.Data.Mappings
                     x.EstabelecimentoCnpjOrdem,
                     x.EstabelecimentoCnpjDv
                 })
+                .HasConstraintName("FK_Endereco_Estabelecimento")
                 .OnDelete(DeleteBehavior.Cascade);
 
             builder.HasOne(x => x.Pais)
                 .WithMany()
                 .HasForeignKey(x => x.PaisId)
+                .HasConstraintName("FK_Endereco_Pais")
                 .OnDelete(DeleteBehavior.Restrict);
         }
     }
